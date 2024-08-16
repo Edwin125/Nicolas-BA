@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  # Spring Boot Service
+  webchatbot:
+    image: webchatbot:latest
+    container_name: webchatbot_compose
+    environment:
+      SPRING_APPLICATION_NAME: webchatbot
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_DATASOURCE_URL: jdbc:postgresql://my_postgres:5432/ukb
+      SPRING_DATASOURCE_USERNAME: docker_user
+      SPRING_DATASOURCE_PASSWORD: docker_user
+      SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.PostgreSQLDialect
+      SPRING_AI_OLLAMA_BASE_URL: http://llama3:11434
+      SPRING_AI_OLLAMA_CHAT_MODEL: llama3
+    depends_on:
+      - my_postgres
+      - llama3
+    ports:
+      - "8080:8080" # Expose the Spring Boot application on port 8080
+
+  # PostgreSQL Service
+  my_postgres:
+    image: postgres:latest
+    container_name: my_postgres_compose
+    environment:
+      POSTGRES_DB: ukb
+      POSTGRES_USER: docker_user
+      POSTGRES_PASSWORD: docker_user
+    ports:
+      - "5433:5432" # Expose PostgreSQL on port 5433 externally, but internally it uses 5432
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # Next.js Service
+  nextjs:
+    image: frontend:latest
+    container_name: nextjs_compose
+    build:
+      context: ./src/main/webapp
+      dockerfile: Dockerfile
+    volumes:
+      - .:/webapp
+      - /webapp/node_modules
+      - /webapp/.next
+    ports:
+      - "3000:3000"
+
+  llama3:
+    image: your-llama3-image # Replace with the actual image for llama3
+    container_name: llama3
+    ports:
+      - "11434:11434" # Expose port for llama3 service
+    #    environment:
+    # Add any required environment variables for llama3 if needed
+    # Example: LLAMA_API_KEY: your_api_key
+    # If required, add volume mounts or other configuration here
+
+volumes:
+  postgres_data:
